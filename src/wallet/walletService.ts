@@ -1,31 +1,49 @@
 import WalletManagerEvm from '@tetherto/wdk-wallet-evm';
+import WalletManagerSolana from '@tetherto/wdk-wallet-solana';
+import WalletManagerSpark from '@tetherto/wdk-wallet-spark';
 import { generateMnemonic, validateMnemonic } from 'bip39';
-import { getActiveChainId, getRpcUrl } from '@/storage/settingsStore.js';
+import { getActiveChainId, getRpcUrl, getSolanaRpcUrl, getSparkNetwork } from '@/storage/settingsStore.js';
 import { encryptSecret, decryptSecret } from '@/utils/crypto.js';
 import { saveWallet, loadWallet, walletExists } from '@/storage/secureStore.js';
-import type { StoredWallet, WalletSession } from '@/types/index.js';
+import type { StoredWalletV2, WalletAddresses, WalletSession } from '@/types/index.js';
 
-export async function deriveAddress(mnemonic: string): Promise<`0x${string}`> {
-  const chainId = getActiveChainId();
-  const manager = new WalletManagerEvm(mnemonic, { provider: getRpcUrl(chainId), chainId });
+interface Disposable {
+  dispose?: () => void;
+}
+
+async function withManager<T>(manager: Disposable & { getAccount(index?: number): Promise<{ getAddress(): Promise<string> }> }, fn: (m: typeof manager) => Promise<T>): Promise<T> {
   try {
-    const account = await manager.getAccount(0);
-    const address = await account.getAddress();
-    account.dispose();
-    return address as `0x${string}`;
+    return await fn(manager);
   } finally {
     try {
-      (manager as { dispose?: () => void }).dispose?.();
+      manager.dispose?.();
     } catch {
       /* noop */
     }
   }
 }
 
+async function addressOf(manager: { getAccount(index?: number): Promise<{ getAddress(): Promise<string> }> }): Promise<string> {
+  const account = await manager.getAccount(0);
+  const address = await account.getAddress();
+  (account as Disposable).dispose?.();
+  return address;
+}
+
+export async function deriveAddresses(mnemonic: string): Promise<WalletAddresses> {
+  const chainId = getActiveChainId();
+  const [evm, solana, spark] = await Promise.all([
+    withManager(new WalletManagerEvm(mnemonic, { provider: getRpcUrl(chainId), chainId }), addressOf),
+    withManager(new WalletManagerSolana(mnemonic, { provider: getSolanaRpcUrl() }), addressOf),
+    withManager(new WalletManagerSpark(mnemonic, { network: getSparkNetwork() }), addressOf),
+  ]);
+  return { evm: evm as `0x${string}`, solana, spark };
+}
+
 export async function createWallet(): Promise<WalletSession> {
   const mnemonic = generateMnemonic(128); // 12 words
-  const address = await deriveAddress(mnemonic);
-  return { address, mnemonic };
+  const addresses = await deriveAddresses(mnemonic);
+  return { mnemonic, addresses };
 }
 
 export async function importWallet(mnemonicInput: string): Promise<WalletSession> {
@@ -33,14 +51,14 @@ export async function importWallet(mnemonicInput: string): Promise<WalletSession
   if (!validateMnemonic(mnemonic)) {
     throw new Error('Invalid mnemonic phrase. Please check the words and try again.');
   }
-  const address = await deriveAddress(mnemonic);
-  return { address, mnemonic };
+  const addresses = await deriveAddresses(mnemonic);
+  return { mnemonic, addresses };
 }
 
 export function persistWallet(session: WalletSession, password: string): void {
-  const record: StoredWallet = {
-    version: 1,
-    address: session.address,
+  const record: StoredWalletV2 = {
+    version: 2,
+    addresses: session.addresses,
     createdAt: new Date().toISOString(),
     crypto: encryptSecret(session.mnemonic, password),
   };
@@ -51,7 +69,18 @@ export async function unlockWallet(password: string): Promise<WalletSession> {
   const record = loadWallet();
   if (!record) throw new Error('No wallet found. Create or import one first.');
   const mnemonic = decryptSecret(record.crypto, password);
-  return { address: record.address, mnemonic };
+  const addresses = await deriveAddresses(mnemonic);
+  const session: WalletSession = { mnemonic, addresses };
+  if (record.version !== 2) {
+    const migrated: StoredWalletV2 = {
+      version: 2,
+      addresses,
+      createdAt: record.createdAt,
+      crypto: record.crypto,
+    };
+    saveWallet(migrated);
+  }
+  return session;
 }
 
 export { walletExists };

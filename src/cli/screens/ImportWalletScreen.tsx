@@ -88,7 +88,10 @@ export function ImportWalletScreen({ onDone, onCancel }: Props): React.ReactElem
           {step === 'pw1' && session && (
             <>
               <Text>
-                Detected address: <Text color="green">{shortAddress(session.address)}</Text>
+                Detected EVM address: <Text color="green">{shortAddress(session.addresses.evm)}</Text>
+              </Text>
+              <Text dimColor>
+                Solana {shortAddress(session.addresses.solana)} · Spark {shortAddress(session.addresses.spark)}
               </Text>
               <Text dimColor>Choose a password to encrypt this wallet (min 8 chars).</Text>
               <Box marginTop={1}>

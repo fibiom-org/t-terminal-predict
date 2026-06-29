@@ -1,25 +1,26 @@
 import React, { useState } from 'react';
 import { Box, Text, useInput } from 'ink';
-import { isAddress } from 'viem';
 import { Menu } from '@/components/Menu.js';
 import { Field } from '@/components/Field.js';
 import { Loading } from '@/components/Loading.js';
 import { Screen } from '@/components/Screen.js';
-import { CHAINS, getChain, nativeToken } from '@/config/chains.js';
+import { CHAINS, getChain } from '@/config/chains.js';
+import { SOLANA, SPARK } from '@/config/nonEvm.js';
 import {
+  assetsForKind,
   buildSendRequest,
   getSendExecutor,
   validateSendRequest,
+  type SendAsset,
   type ValidatedSend,
 } from '@/wallet/transferService.js';
 import { unlockWallet } from '@/wallet/walletService.js';
-import type { SendResult, TokenInfo, WalletSession } from '@/types/index.js';
+import type { ChainKind, SendResult, WalletSession } from '@/types/index.js';
 
-type Step = 'network' | 'token' | 'recipient' | 'amount' | 'confirm' | 'password' | 'executing' | 'result';
+type Step = 'kind' | 'network' | 'token' | 'recipient' | 'amount' | 'confirm' | 'password' | 'executing' | 'result';
 
 interface Props {
   session: WalletSession;
-
   initialChainId: number;
   onBack: () => void;
   onSent: () => void;
@@ -27,20 +28,37 @@ interface Props {
 
 const executor = getSendExecutor();
 
+function kindLabel(kind: ChainKind, chainId: number): string {
+  if (kind === 'evm') return getChain(chainId).name;
+  return kind === 'solana' ? SOLANA.label : SPARK.label;
+}
+
+function recipientHint(kind: ChainKind): string {
+  if (kind === 'evm') return 'Recipient (0x…):';
+  if (kind === 'solana') return 'Recipient (Solana address):';
+  return 'Recipient (Spark address / ln… invoice):';
+}
+
 export function SendScreen({ session, initialChainId, onBack, onSent }: Props): React.ReactElement {
-  const [step, setStep] = useState<Step>('network');
+  const [step, setStep] = useState<Step>('kind');
+  const [kind, setKind] = useState<ChainKind>('evm');
   const [chainId, setChainId] = useState<number>(initialChainId);
-  const [token, setToken] = useState<TokenInfo | null>(null);
+  const [asset, setAsset] = useState<SendAsset | null>(null);
   const [recipient, setRecipient] = useState<string>('');
   const [send, setSend] = useState<ValidatedSend | null>(null);
   const [result, setResult] = useState<SendResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const beforeToken: Step = kind === 'evm' ? 'network' : 'kind';
+
   const goBack = (): void => {
     setError(null);
     switch (step) {
+      case 'network':
+        setStep('kind');
+        break;
       case 'token':
-        setStep('network');
+        setStep(beforeToken);
         break;
       case 'recipient':
         setStep('token');
@@ -54,7 +72,7 @@ export function SendScreen({ session, initialChainId, onBack, onSent }: Props): 
       case 'password':
         setStep('confirm');
         break;
-      case 'network':
+      case 'kind':
       case 'result':
       default:
         onBack();
@@ -71,41 +89,40 @@ export function SendScreen({ session, initialChainId, onBack, onSent }: Props): 
         onBack();
       }
     },
-
     { isActive: step !== 'executing' },
   );
 
-  const tokenChoices = (): TokenInfo[] => {
-    const chain = getChain(chainId);
-    return [nativeToken(chain), ...chain.tokens];
-  };
-
-  const handleAmount = (value: string): void => {
-    if (!token) return;
-    try {
-      const validated = validateSendRequest(buildSendRequest(chainId, token, recipient, value));
-      setSend(validated);
-      setError(null);
-      setStep('confirm');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+  const enterAssetStep = (nextKind: ChainKind, nextChainId: number): void => {
+    const assets = assetsForKind(nextKind, nextChainId);
+    if (assets.length === 1) {
+      setAsset(assets[0] ?? null);
+      setStep('recipient');
+    } else {
+      setStep('token');
     }
   };
 
   const handleRecipient = (value: string): void => {
     const trimmed = value.trim();
     if (!trimmed) {
-      setError('Enter a recipient address.');
-      return;
-    }
-
-    if (!isAddress(trimmed)) {
-      setError('Enter a valid recipient address (0x…).');
+      setError('Enter a recipient.');
       return;
     }
     setRecipient(trimmed);
     setError(null);
     setStep('amount');
+  };
+
+  const handleAmount = (value: string): void => {
+    if (!asset) return;
+    try {
+      const validated = validateSendRequest(buildSendRequest(kind, chainId, asset, recipient, value));
+      setSend(validated);
+      setError(null);
+      setStep('confirm');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    }
   };
 
   const handlePassword = async (password: string): Promise<void> => {
@@ -123,22 +140,41 @@ export function SendScreen({ session, initialChainId, onBack, onSent }: Props): 
     }
   };
 
-  const chainName = getChain(chainId).name;
+  const assetChoices = asset ? null : kind === 'evm' ? assetsForKind('evm', chainId) : assetsForKind(kind, chainId);
 
   return (
-    <Screen
-      hints={[
-        { keys: 'enter', label: 'select' },
-        { keys: 'esc', label: 'back' },
-      ]}
-    >
+    <Screen hints={[{ keys: 'enter', label: 'select' }, { keys: 'esc', label: 'back' }]}>
       <Box flexDirection="column">
         <Text bold>Send</Text>
 
         <Box marginTop={1} flexDirection="column">
+          {step === 'kind' && (
+            <>
+              <Text dimColor>Choose the chain family to send on.</Text>
+              <Box marginTop={1}>
+                <Menu<ChainKind | 'back'>
+                  items={[
+                    { value: 'evm', label: 'EVM', hint: 'Ethereum, Arbitrum, Optimism, Base' },
+                    { value: 'solana', label: SOLANA.label, hint: 'SOL & SPL tokens' },
+                    { value: 'spark', label: SPARK.label, hint: 'BTC / Lightning' },
+                    { value: 'back', label: 'Back' },
+                  ]}
+                  onSelect={(v) => {
+                    if (v === 'back') return onBack();
+                    setKind(v);
+                    setAsset(null);
+                    setError(null);
+                    if (v === 'evm') setStep('network');
+                    else enterAssetStep(v, chainId);
+                  }}
+                />
+              </Box>
+            </>
+          )}
+
           {step === 'network' && (
             <>
-              <Text dimColor>Choose the network to send on.</Text>
+              <Text dimColor>Choose the EVM network to send on.</Text>
               <Box marginTop={1}>
                 <Menu<string>
                   items={[
@@ -150,30 +186,31 @@ export function SendScreen({ session, initialChainId, onBack, onSent }: Props): 
                     { value: 'back', label: 'Back' },
                   ]}
                   onSelect={(v) => {
-                    if (v === 'back') return onBack();
-                    setChainId(Number(v));
-                    setStep('token');
+                    if (v === 'back') return setStep('kind');
+                    const id = Number(v);
+                    setChainId(id);
+                    enterAssetStep('evm', id);
                   }}
                 />
               </Box>
             </>
           )}
 
-          {step === 'token' && (
+          {step === 'token' && assetChoices && (
             <>
               <Text>
-                Network: <Text color="cyan">{chainName}</Text>
+                Network: <Text color="cyan">{kindLabel(kind, chainId)}</Text>
               </Text>
               <Text dimColor>Choose the asset to send.</Text>
               <Box marginTop={1}>
                 <Menu<string>
-                  items={tokenChoices().map((t, i) => ({
+                  items={assetChoices.map((a, i) => ({
                     value: String(i),
-                    label: `${t.symbol}`,
-                    hint: t.name,
+                    label: a.token.symbol,
+                    hint: a.token.name,
                   }))}
                   onSelect={(v) => {
-                    setToken(tokenChoices()[Number(v)] ?? null);
+                    setAsset(assetChoices[Number(v)] ?? null);
                     setError(null);
                     setStep('recipient');
                   }}
@@ -182,22 +219,23 @@ export function SendScreen({ session, initialChainId, onBack, onSent }: Props): 
             </>
           )}
 
-          {step === 'recipient' && token && (
+          {step === 'recipient' && asset && (
             <>
               <Text>
-                Sending <Text color="cyan">{token.symbol}</Text> on <Text color="cyan">{chainName}</Text>
+                Sending <Text color="cyan">{asset.token.symbol}</Text> on{' '}
+                <Text color="cyan">{kindLabel(kind, chainId)}</Text>
               </Text>
               <Box marginTop={1}>
-                <Field label="Recipient (0x…):" onSubmit={handleRecipient} />
+                <Field label={recipientHint(kind)} onSubmit={handleRecipient} />
               </Box>
             </>
           )}
 
-          {step === 'amount' && token && (
+          {step === 'amount' && asset && (
             <>
               <Text dimColor>To: {recipient}</Text>
               <Box marginTop={1}>
-                <Field label={`Amount (${token.symbol}):`} onSubmit={handleAmount} />
+                <Field label={`Amount (${asset.token.symbol}):`} onSubmit={handleAmount} />
               </Box>
             </>
           )}
@@ -207,11 +245,11 @@ export function SendScreen({ session, initialChainId, onBack, onSent }: Props): 
               <Text>
                 Send{' '}
                 <Text color="yellow">
-                  {send.amountHuman} {send.token.symbol}
+                  {send.amountHuman} {send.asset.token.symbol}
                 </Text>
               </Text>
               <Text>
-                On: <Text color="cyan">{chainName}</Text>
+                On: <Text color="cyan">{kindLabel(kind, chainId)}</Text>
               </Text>
               <Text>
                 To: <Text color="green">{send.recipient}</Text>

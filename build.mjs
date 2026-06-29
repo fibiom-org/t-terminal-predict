@@ -14,6 +14,8 @@ const external = [
   'viem',
   'viem/*',
   '@tetherto/wdk-wallet-evm',
+  '@tetherto/wdk-wallet-solana',
+  '@tetherto/wdk-wallet-spark',
   'bip39',
   'dotenv',
   'dotenv/config',

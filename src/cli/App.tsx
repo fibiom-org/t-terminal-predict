@@ -7,6 +7,7 @@ import { UnlockScreen } from '@/cli/screens/UnlockScreen.js';
 import { MainScreen } from '@/cli/screens/MainScreen.js';
 import { HeaderContext } from '@/cli/uiContext.js';
 import { walletExists } from '@/storage/secureStore.js';
+import { disposeManagers } from '@/wallet/managers.js';
 import { shortAddress } from '@/utils/format.js';
 import { getActiveChainId } from '@/storage/settingsStore.js';
 import { getChain } from '@/config/chains.js';
@@ -31,22 +32,44 @@ export function App(): React.ReactElement {
     else exit();
   };
 
+  const onLogout = (): void => {
+    disposeManagers();
+    setSession(null);
+    setRoute('unlock');
+  };
+
+  const onReset = (): void => {
+    disposeManagers();
+    setSession(null);
+    setActiveChainId(getActiveChainId());
+    setRoute('welcome');
+  };
+
   const networkName = getChain(activeChainId).name;
   const headerRight = session
-    ? `${networkName} · ${shortAddress(session.address)}`
+    ? `${networkName} · ${shortAddress(session.addresses.evm)}`
     : `${networkName} · ${route === 'unlock' ? 'locked' : 'setup'}`;
 
   return (
     <HeaderContext.Provider value={headerRight}>
       {route === 'welcome' && <WelcomeScreen onSelect={onWelcome} />}
       {route === 'create' && <CreateWalletScreen onDone={enterMain} onCancel={() => setRoute('welcome')} />}
-      {route === 'import' && <ImportWalletScreen onDone={enterMain} onCancel={() => setRoute('welcome')} />}
-      {route === 'unlock' && <UnlockScreen onDone={enterMain} />}
+      {route === 'import' && <ImportWalletScreen onDone={enterMain} onCancel={() => setRoute(walletExists() ? 'unlock' : 'welcome')} />}
+      {route === 'unlock' && (
+        <UnlockScreen onDone={enterMain} onRestore={() => setRoute('import')} onReset={onReset} />
+      )}
       {route === 'main' && session && (
         <MainScreen
           session={session}
           activeChainId={activeChainId}
           onSettingsChanged={() => setActiveChainId(getActiveChainId())}
+          onLogout={onLogout}
+          onReset={onReset}
+          onRestore={() => {
+            disposeManagers();
+            setSession(null);
+            setRoute('import');
+          }}
         />
       )}
     </HeaderContext.Provider>

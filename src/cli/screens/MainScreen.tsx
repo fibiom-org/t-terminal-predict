@@ -7,11 +7,13 @@ import { TradeScreen } from '@/cli/screens/TradeScreen.js';
 import { MarketScreen } from '@/cli/screens/MarketScreen.js';
 import { SendScreen } from '@/cli/screens/SendScreen.js';
 import { SettingsScreen } from '@/cli/screens/SettingsScreen.js';
+import { ReceiveScreen } from '@/cli/screens/ReceiveScreen.js';
+import { HistoryScreen } from '@/cli/screens/HistoryScreen.js';
 import { Screen } from '@/components/Screen.js';
 import { Panel } from '@/components/Panel.js';
 import { Loading } from '@/components/Loading.js';
 import { CommandInput } from '@/components/CommandInput.js';
-import { getAllChainBalances } from '@/wallet/balanceService.js';
+import { getPortfolio } from '@/wallet/portfolio.js';
 import { parseCommand, commandLabel, COMMANDS } from '@/commands/registry.js';
 import { DEFAULT_PAIR } from '@/config/index.js';
 import { getChain } from '@/config/chains.js';
@@ -24,11 +26,14 @@ interface Props {
   activeChainId: number;
 
   onSettingsChanged: () => void;
+  onLogout: () => void;
+  onReset: () => void;
+  onRestore: () => void;
 }
 
-type View = 'home' | 'pairs' | 'pools' | 'poolDetail' | 'trade' | 'market' | 'send' | 'settings';
+type View = 'home' | 'pairs' | 'pools' | 'poolDetail' | 'trade' | 'market' | 'send' | 'settings' | 'receive' | 'history';
 
-export function MainScreen({ session, activeChainId, onSettingsChanged }: Props): React.ReactElement {
+export function MainScreen({ session, activeChainId, onSettingsChanged, onLogout, onReset, onRestore }: Props): React.ReactElement {
   const { exit } = useApp();
   const [view, setView] = useState<View>('home');
   const [pair, setPair] = useState<TradingPair>(DEFAULT_PAIR);
@@ -44,12 +49,12 @@ export function MainScreen({ session, activeChainId, onSettingsChanged }: Props)
   const refreshBalances = useCallback(async (): Promise<void> => {
     setLoadingBalances(true);
     try {
-      const result = await getAllChainBalances(session.address);
+      const result = await getPortfolio(session);
       setBalances(result);
     } finally {
       setLoadingBalances(false);
     }
-  }, [session.address]);
+  }, [session]);
 
   useEffect(() => {
     void refreshBalances();
@@ -68,6 +73,16 @@ export function MainScreen({ session, activeChainId, onSettingsChanged }: Props)
         break;
       case 'send':
         setView('send');
+        break;
+      case 'receive':
+        setView('receive');
+        break;
+      case 'history':
+        setView('history');
+        break;
+      case 'logout':
+        pushLog('Locking wallet…');
+        onLogout();
         break;
       case 'pairs':
         setView('pairs');
@@ -153,6 +168,14 @@ export function MainScreen({ session, activeChainId, onSettingsChanged }: Props)
     );
   }
 
+  if (view === 'receive') {
+    return <ReceiveScreen session={session} onBack={() => setView('home')} />;
+  }
+
+  if (view === 'history') {
+    return <HistoryScreen session={session} onBack={() => setView('home')} />;
+  }
+
   if (view === 'settings') {
     return (
       <SettingsScreen
@@ -161,9 +184,23 @@ export function MainScreen({ session, activeChainId, onSettingsChanged }: Props)
           onSettingsChanged();
           void refreshBalances();
         }}
+        onLogout={onLogout}
+        onReset={onReset}
+        onRestore={onRestore}
       />
     );
   }
+
+  // Flatten the portfolio into a clean holdings list: only assets with a non-zero
+  // balance, each tagged with its network. Empty chains/tokens are hidden.
+  const heldAssets = (balances ?? [])
+    .filter((cb) => !cb.error)
+    .flatMap((cb) => {
+      const rows = cb.native && cb.native.raw > 0n ? [{ ...cb.native, network: cb.chainName }] : [];
+      return [...rows, ...cb.tokens.filter((t) => t.raw > 0n).map((t) => ({ ...t, network: cb.chainName }))];
+    })
+    .map((b) => ({ symbol: b.token.symbol, formatted: b.formatted, network: b.network }));
+  const unavailableCount = (balances ?? []).filter((cb) => cb.error).length;
 
   return (
     <Screen
@@ -177,8 +214,15 @@ export function MainScreen({ session, activeChainId, onSettingsChanged }: Props)
       <Box flexDirection="column" flexGrow={1}>
         <Box>
           <Panel title="Account" flexGrow={1}>
-            <Text>{shortAddress(session.address)}</Text>
-            <Text dimColor>{session.address}</Text>
+            <Text>
+              EVM <Text color="white">{shortAddress(session.addresses.evm)}</Text>
+            </Text>
+            <Text>
+              SOL <Text color="white">{shortAddress(session.addresses.solana)}</Text>
+            </Text>
+            <Text>
+              BTC <Text color="white">{shortAddress(session.addresses.spark)}</Text>
+            </Text>
             <Text>
               Active network <Text color="cyan">{getChain(activeChainId).name}</Text>
             </Text>
@@ -186,33 +230,25 @@ export function MainScreen({ session, activeChainId, onSettingsChanged }: Props)
               Pair <Text color="cyan">{pair.label}</Text> <Text dimColor>{getChain(pair.chainId).name}</Text>
             </Text>
           </Panel>
-          <Panel title="Balances (all networks)" width={40}>
+          <Panel title="Assets" width={40}>
             {loadingBalances && !balances ? (
               <Loading label="loading…" />
+            ) : heldAssets.length === 0 ? (
+              <Text dimColor>No assets yet. Use /receive to fund your wallet.</Text>
             ) : (
-              balances?.map((cb) => (
-                <Box key={cb.chainId} flexDirection="column">
-                  <Text color="cyan">{cb.chainName}</Text>
-                  {cb.error ? (
-                    <Text color="red"> unavailable</Text>
-                  ) : (
-                    <>
-                      {cb.native && (
-                        <Text>
-                          {'  '}
-                          {cb.native.token.symbol.padEnd(6)} <Text color="white">{cb.native.formatted}</Text>
-                        </Text>
-                      )}
-                      {cb.tokens.map((b) => (
-                        <Text key={b.token.symbol}>
-                          {'  '}
-                          {b.token.symbol.padEnd(6)} <Text color="white">{b.formatted}</Text>
-                        </Text>
-                      ))}
-                    </>
-                  )}
-                </Box>
-              ))
+              <>
+                {heldAssets.map((a) => (
+                  <Text key={`${a.network}-${a.symbol}`}>
+                    {a.symbol.padEnd(6)} <Text color="white">{a.formatted.padEnd(14)}</Text>
+                    <Text dimColor>{a.network}</Text>
+                  </Text>
+                ))}
+                {unavailableCount > 0 && (
+                  <Text dimColor>
+                    {unavailableCount} network{unavailableCount > 1 ? 's' : ''} unavailable
+                  </Text>
+                )}
+              </>
             )}
           </Panel>
         </Box>

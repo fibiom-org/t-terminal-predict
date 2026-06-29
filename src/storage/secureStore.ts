@@ -1,6 +1,7 @@
 import { homedir } from 'node:os';
 import { join } from 'node:path';
-import { existsSync, mkdirSync, readFileSync, writeFileSync, chmodSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync, chmodSync, rmSync } from 'node:fs';
+import { clearSettingsCache } from '@/storage/settingsStore.js';
 import type { StoredWallet } from '@/types/index.js';
 
 const DIR = join(homedir(), '.tterminal');
@@ -40,4 +41,10 @@ export function loadWallet(): StoredWallet | null {
   if (!walletExists()) return null;
   const raw = readFileSync(WALLET_FILE, 'utf8');
   return JSON.parse(raw) as StoredWallet;
+}
+
+
+export function resetAll(): void {
+  rmSync(DIR, { recursive: true, force: true });
+  clearSettingsCache();
 }
