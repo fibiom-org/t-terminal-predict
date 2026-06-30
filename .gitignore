@@ -5,5 +5,5 @@ dist
 
 .idea
 
-DS_STORE
+.DS_Store
 test
