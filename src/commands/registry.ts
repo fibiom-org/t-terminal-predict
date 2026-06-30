@@ -2,11 +2,6 @@ export type CommandName =
   | 'balance'
   | 'send'
   | 'receive'
-  | 'history'
-  | 'pairs'
-  | 'pools'
-  | 'trade'
-  | 'chart'
   | 'settings'
   | 'logout'
   | 'help'
@@ -21,13 +16,8 @@ export interface CommandSpec {
 
 export const COMMANDS: readonly CommandSpec[] = [
   { name: 'balance', aliases: ['b', 'bal'], summary: 'Show balances across all networks' },
-  { name: 'send', aliases: ['s', 'transfer'], summary: 'Send a token (EVM / Solana / Spark)' },
-  { name: 'receive', aliases: ['r', 'deposit'], summary: 'Show deposit addresses / invoices' },
-  { name: 'history', aliases: ['hist', 'tx'], summary: 'Recent transactions (Solana / Spark)' },
-  { name: 'pairs', aliases: ['p'], summary: 'List tradable pairs (per network)' },
-  { name: 'pools', aliases: ['pool'], summary: 'Live Uniswap v3 pools for all pairs' },
-  { name: 'trade', aliases: ['t'], summary: 'Open the trade screen for the selected pair' },
-  { name: 'chart', aliases: ['c', 'market'], summary: 'Price chart + Uniswap pool info' },
+  { name: 'send', aliases: ['s', 'transfer'], summary: 'Send a token (EVM / Solana)' },
+  { name: 'receive', aliases: ['r', 'deposit'], summary: 'Show deposit addresses' },
   { name: 'help', aliases: ['h', '?'], summary: 'Show available commands' },
   { name: 'clear', aliases: ['cls'], summary: 'Clear the output log' },
   { name: 'settings', aliases: ['cfg', 'config'], summary: 'Switch network / configure RPC node' },

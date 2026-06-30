@@ -99,9 +99,6 @@ export function CreateWalletScreen({ onDone, onCancel }: Props): React.ReactElem
                 <Text>
                   Solana: <Text color="green">{session.addresses.solana}</Text>
                 </Text>
-                <Text>
-                  Spark: <Text color="green">{session.addresses.spark}</Text>
-                </Text>
               </Box>
               <Box marginTop={1} flexDirection="column" borderStyle="round" borderColor="yellow" paddingX={1}>
                 <Text color="yellow" bold>

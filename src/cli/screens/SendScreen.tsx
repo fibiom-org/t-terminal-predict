@@ -5,7 +5,7 @@ import { Field } from '@/components/Field.js';
 import { Loading } from '@/components/Loading.js';
 import { Screen } from '@/components/Screen.js';
 import { CHAINS, getChain } from '@/config/chains.js';
-import { SOLANA, SPARK } from '@/config/nonEvm.js';
+import { SOLANA } from '@/config/nonEvm.js';
 import {
   assetsForKind,
   buildSendRequest,
@@ -29,14 +29,11 @@ interface Props {
 const executor = getSendExecutor();
 
 function kindLabel(kind: ChainKind, chainId: number): string {
-  if (kind === 'evm') return getChain(chainId).name;
-  return kind === 'solana' ? SOLANA.label : SPARK.label;
+  return kind === 'evm' ? getChain(chainId).name : SOLANA.label;
 }
 
 function recipientHint(kind: ChainKind): string {
-  if (kind === 'evm') return 'Recipient (0x…):';
-  if (kind === 'solana') return 'Recipient (Solana address):';
-  return 'Recipient (Spark address / ln… invoice):';
+  return kind === 'evm' ? 'Recipient (0x…):' : 'Recipient (Solana address):';
 }
 
 export function SendScreen({ session, initialChainId, onBack, onSent }: Props): React.ReactElement {
@@ -156,7 +153,6 @@ export function SendScreen({ session, initialChainId, onBack, onSent }: Props): 
                   items={[
                     { value: 'evm', label: 'EVM', hint: 'Ethereum, Arbitrum, Optimism, Base' },
                     { value: 'solana', label: SOLANA.label, hint: 'SOL & SPL tokens' },
-                    { value: 'spark', label: SPARK.label, hint: 'BTC / Lightning' },
                     { value: 'back', label: 'Back' },
                   ]}
                   onSelect={(v) => {

@@ -1,7 +1,7 @@
 import { isAddress, parseUnits } from 'viem';
 import { getChain, nativeToken } from '@/config/chains.js';
-import { SOLANA, SOLANA_TOKENS, SPARK } from '@/config/nonEvm.js';
-import { getEvmManager, getSolanaManager, getSparkManager } from '@/wallet/managers.js';
+import { SOLANA, SOLANA_TOKENS } from '@/config/nonEvm.js';
+import { getEvmManager, getSolanaManager } from '@/wallet/managers.js';
 import type { ChainKind, SendResult, TokenInfo, WalletSession } from '@/types/index.js';
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
@@ -23,13 +23,10 @@ export function assetsForKind(kind: ChainKind, chainId: number): SendAsset[] {
       ...chain.tokens.map((t) => ({ token: t, tokenId: t.address })),
     ];
   }
-  if (kind === 'solana') {
-    return [
-      { token: asTokenInfo(SOLANA.nativeSymbol, SOLANA.nativeSymbol, SOLANA.nativeDecimals), tokenId: null },
-      ...SOLANA_TOKENS.map((t) => ({ token: asTokenInfo(t.symbol, t.name, t.decimals), tokenId: t.mint })),
-    ];
-  }
-  return [{ token: asTokenInfo(SPARK.nativeSymbol, SPARK.nativeSymbol, SPARK.nativeDecimals), tokenId: null }];
+  return [
+    { token: asTokenInfo(SOLANA.nativeSymbol, SOLANA.nativeSymbol, SOLANA.nativeDecimals), tokenId: null },
+    ...SOLANA_TOKENS.map((t) => ({ token: asTokenInfo(t.symbol, t.name, t.decimals), tokenId: t.mint })),
+  ];
 }
 
 export interface SendRequest {
@@ -49,14 +46,8 @@ function validateRecipient(kind: ChainKind, recipient: string): void {
     if (!isAddress(recipient)) throw new Error('Enter a valid EVM recipient address (0x…).');
     return;
   }
-  if (kind === 'solana') {
-    if (!/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(recipient)) {
-      throw new Error('Enter a valid Solana address (base58).');
-    }
-    return;
-  }
-  if (!/^(sp|spark|ln)/i.test(recipient)) {
-    throw new Error('Enter a Spark address or a Lightning (ln…) invoice.');
+  if (!/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(recipient)) {
+    throw new Error('Enter a valid Solana address (base58).');
   }
 }
 
@@ -90,8 +81,7 @@ export interface SendExecutor {
 }
 
 function networkLabel(send: ValidatedSend): string {
-  if (send.kind === 'evm') return getChain(send.chainId).name;
-  return send.kind === 'solana' ? SOLANA.label : SPARK.label;
+  return send.kind === 'evm' ? getChain(send.chainId).name : SOLANA.label;
 }
 
 export class MockSendExecutor implements SendExecutor {
@@ -118,13 +108,9 @@ export class WdkSendExecutor implements SendExecutor {
   async execute(session: WalletSession, send: ValidatedSend): Promise<SendResult> {
     try {
       const manager =
-        send.kind === 'evm'
-          ? getEvmManager(session.mnemonic, send.chainId)
-          : send.kind === 'solana'
-            ? getSolanaManager(session.mnemonic)
-            : getSparkManager(session.mnemonic);
+        send.kind === 'evm' ? getEvmManager(session.mnemonic, send.chainId) : getSolanaManager(session.mnemonic);
       const account = await manager.getAccount(0);
-      // For native sends EVM expects the zero address; non-EVM accept an empty token.
+      // For native sends EVM expects the zero address; Solana accepts an empty token.
       const token = send.asset.tokenId ?? (send.kind === 'evm' ? ZERO_ADDRESS : '');
       const result = await account.transfer({ token, recipient: send.recipient, amount: send.amountRaw });
       return {

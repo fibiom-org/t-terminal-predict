@@ -1,18 +1,10 @@
-export type ChainKind = 'evm' | 'solana' | 'spark';
+export type ChainKind = 'evm' | 'solana';
 
 export interface TokenInfo {
   readonly symbol: string;
   readonly name: string;
   readonly address: `0x${string}`;
   readonly decimals: number;
-}
-
-export interface UniswapAddresses {
-  readonly quoterV2: `0x${string}`;
-
-  readonly swapRouter02: `0x${string}`;
-
-  readonly factory: `0x${string}`;
 }
 
 export interface ChainConfig {
@@ -26,29 +18,6 @@ export interface ChainConfig {
   readonly defaultRpcUrl: string;
 
   readonly tokens: readonly TokenInfo[];
-
-  readonly uniswap: UniswapAddresses;
-}
-
-export interface TradingPair {
-  readonly id: string;
-
-  readonly chainId: number;
-
-  readonly label: string;
-  readonly base: TokenInfo;
-  readonly quote: TokenInfo;
-
-  readonly feeTier: number;
-
-  readonly chartCoinId: string;
-}
-
-export interface PriceHistory {
-  readonly prices: readonly number[];
-  readonly last: number;
-  readonly changePct: number;
-  readonly days: number;
 }
 
 export interface TokenBalance {
@@ -74,7 +43,6 @@ export interface ChainBalances {
 export interface WalletAddresses {
   readonly evm: `0x${string}`;
   readonly solana: string;
-  readonly spark: string;
 }
 
 interface EncryptedSecret {
@@ -105,26 +73,6 @@ export type StoredWallet = StoredWalletV1 | StoredWalletV2;
 export interface WalletSession {
   readonly mnemonic: string;
   readonly addresses: WalletAddresses;
-}
-
-export type SwapSide = 'buy' | 'sell';
-
-export interface SwapQuote {
-  readonly side: SwapSide;
-  readonly pair: TradingPair;
-  readonly amountIn: TokenInfo;
-  readonly amountOut: TokenInfo;
-  readonly amountInHuman: string;
-  readonly amountOutHuman: string;
-
-  readonly price: string;
-}
-
-export interface SwapResult {
-  readonly ok: boolean;
-  readonly hash?: string;
-  readonly message: string;
-  readonly simulated: boolean;
 }
 
 export interface SendResult {

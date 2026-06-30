@@ -25,10 +25,6 @@
   "dependencies": {
     "@tetherto/wdk-wallet-evm": "^1.0.0-beta.13",
     "@tetherto/wdk-wallet-solana": "1.0.0-beta.10",
-    "@tetherto/wdk-wallet-spark": "1.0.0-beta.21",
-    "@uniswap/sdk-core": "^7.18.0",
-    "@uniswap/v3-sdk": "^3.30.5",
-    "asciichart": "^1.5.25",
     "bip39": "^3.1.0",
     "dotenv": "^16.4.5",
     "ink": "^7.1.0",
@@ -39,7 +35,6 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@types/asciichart": "^1.5.8",
     "@types/node": "^22.0.0",
     "@types/react": "^19.2.0",
     "esbuild": "^0.28.1",

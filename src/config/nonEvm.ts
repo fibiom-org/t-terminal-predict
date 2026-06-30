@@ -21,18 +21,7 @@ export const SOLANA: NonEvmChainInfo = {
   nativeDecimals: 9,
 };
 
-export const SPARK: NonEvmChainInfo = {
-  kind: 'spark',
-  label: 'Spark (BTC)',
-  nativeSymbol: 'BTC',
-  nativeDecimals: 8,
-};
-
 export const DEFAULT_SOLANA_RPC_URL = 'https://api.mainnet-beta.solana.com';
-
-export type SparkNetwork = 'MAINNET' | 'TESTNET' | 'SIGNET' | 'REGTEST' | 'LOCAL';
-export const SPARK_NETWORKS: readonly SparkNetwork[] = ['MAINNET', 'TESTNET', 'SIGNET', 'REGTEST', 'LOCAL'];
-export const DEFAULT_SPARK_NETWORK: SparkNetwork = 'MAINNET';
 
 export const SOLANA_TOKENS: readonly SplToken[] = [
   { symbol: 'USDT', name: 'Tether USD', mint: 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB', decimals: 6 },

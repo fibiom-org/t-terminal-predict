@@ -1,7 +1,6 @@
 import WalletManagerEvm from '@tetherto/wdk-wallet-evm';
 import WalletManagerSolana from '@tetherto/wdk-wallet-solana';
-import WalletManagerSpark from '@tetherto/wdk-wallet-spark';
-import { getRpcUrl, getSolanaRpcUrl, getSparkNetwork } from '@/storage/settingsStore.js';
+import { getRpcUrl, getSolanaRpcUrl } from '@/storage/settingsStore.js';
 
 interface Disposable {
   dispose?: () => void;
@@ -35,12 +34,6 @@ export function getSolanaManager(mnemonic: string): WalletManagerSolana {
   ensureMnemonic(mnemonic);
   const rpcUrl = getSolanaRpcUrl();
   return getCached(`solana:${rpcUrl}`, () => new WalletManagerSolana(mnemonic, { provider: rpcUrl }));
-}
-
-export function getSparkManager(mnemonic: string): WalletManagerSpark {
-  ensureMnemonic(mnemonic);
-  const network = getSparkNetwork();
-  return getCached(`spark:${network}`, () => new WalletManagerSpark(mnemonic, { network }));
 }
 
 export function disposeManagers(): void {

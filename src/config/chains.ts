@@ -1,16 +1,4 @@
-import type { ChainConfig, TokenInfo, UniswapAddresses } from '@/types/index.js';
-
-const UNISWAP_CANONICAL: UniswapAddresses = {
-  quoterV2: '0x61fFE014bA17989E743c5F6cB21bF9697530B21e',
-  swapRouter02: '0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45',
-  factory: '0x1F98431c8aD98523631AE4a59f267346ea31F984',
-};
-
-const UNISWAP_BASE: UniswapAddresses = {
-  quoterV2: '0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a',
-  swapRouter02: '0x2626664c2603336E57B271c5C0b26F421741e481',
-  factory: '0x33128a8fC17869897dcE68Ed026d694621f6FDfD',
-};
+import type { ChainConfig, TokenInfo } from '@/types/index.js';
 
 const ETH_TOKENS: readonly TokenInfo[] = [
   { symbol: 'USDT', name: 'Tether USD', address: '0xdAC17F958D2ee523a2206206994597C13D831ec7', decimals: 6 },
@@ -48,7 +36,6 @@ export const CHAINS: readonly ChainConfig[] = [
     nativeDecimals: 18,
     defaultRpcUrl: 'https://ethereum-rpc.publicnode.com',
     tokens: ETH_TOKENS,
-    uniswap: UNISWAP_CANONICAL,
   },
   {
     id: 42161,
@@ -57,7 +44,6 @@ export const CHAINS: readonly ChainConfig[] = [
     nativeDecimals: 18,
     defaultRpcUrl: 'https://arbitrum-one-rpc.publicnode.com',
     tokens: ARB_TOKENS,
-    uniswap: UNISWAP_CANONICAL,
   },
   {
     id: 10,
@@ -66,7 +52,6 @@ export const CHAINS: readonly ChainConfig[] = [
     nativeDecimals: 18,
     defaultRpcUrl: 'https://optimism-rpc.publicnode.com',
     tokens: OP_TOKENS,
-    uniswap: UNISWAP_CANONICAL,
   },
   {
     id: 8453,
@@ -75,7 +60,6 @@ export const CHAINS: readonly ChainConfig[] = [
     nativeDecimals: 18,
     defaultRpcUrl: 'https://base-rpc.publicnode.com',
     tokens: BASE_TOKENS,
-    uniswap: UNISWAP_BASE,
   },
 ];
 

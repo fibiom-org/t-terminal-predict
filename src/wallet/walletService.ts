@@ -1,8 +1,7 @@
 import WalletManagerEvm from '@tetherto/wdk-wallet-evm';
 import WalletManagerSolana from '@tetherto/wdk-wallet-solana';
-import WalletManagerSpark from '@tetherto/wdk-wallet-spark';
 import { generateMnemonic, validateMnemonic } from 'bip39';
-import { getActiveChainId, getRpcUrl, getSolanaRpcUrl, getSparkNetwork } from '@/storage/settingsStore.js';
+import { getActiveChainId, getRpcUrl, getSolanaRpcUrl } from '@/storage/settingsStore.js';
 import { encryptSecret, decryptSecret } from '@/utils/crypto.js';
 import { saveWallet, loadWallet, walletExists } from '@/storage/secureStore.js';
 import type { StoredWalletV2, WalletAddresses, WalletSession } from '@/types/index.js';
@@ -32,12 +31,11 @@ async function addressOf(manager: { getAccount(index?: number): Promise<{ getAdd
 
 export async function deriveAddresses(mnemonic: string): Promise<WalletAddresses> {
   const chainId = getActiveChainId();
-  const [evm, solana, spark] = await Promise.all([
+  const [evm, solana] = await Promise.all([
     withManager(new WalletManagerEvm(mnemonic, { provider: getRpcUrl(chainId), chainId }), addressOf),
     withManager(new WalletManagerSolana(mnemonic, { provider: getSolanaRpcUrl() }), addressOf),
-    withManager(new WalletManagerSpark(mnemonic, { network: getSparkNetwork() }), addressOf),
   ]);
-  return { evm: evm as `0x${string}`, solana, spark };
+  return { evm: evm as `0x${string}`, solana };
 }
 
 export async function createWallet(): Promise<WalletSession> {

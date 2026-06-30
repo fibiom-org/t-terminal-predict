@@ -4,18 +4,15 @@ import { Menu } from '@/components/Menu.js';
 import { Field } from '@/components/Field.js';
 import { Screen } from '@/components/Screen.js';
 import { CHAINS } from '@/config/chains.js';
-import { SPARK_NETWORKS, type SparkNetwork } from '@/config/nonEvm.js';
 import {
   getActiveChainId,
   getRpcUrl,
   getSolanaRpcUrl,
-  getSparkNetwork,
   hasRpcOverride,
   hasSolanaRpcOverride,
   setActiveChainId,
   setRpcUrl,
   setSolanaRpcUrl,
-  setSparkNetwork,
 } from '@/storage/settingsStore.js';
 import { resetAll } from '@/storage/secureStore.js';
 import { resetClients } from '@/wallet/client.js';
@@ -27,7 +24,6 @@ type Step =
   | 'detail'
   | 'editRpc'
   | 'solana'
-  | 'spark'
   | 'wallet'
   | 'confirmReset';
 
@@ -66,11 +62,10 @@ export function SettingsScreen({ onBack, onChange, onLogout, onReset, onRestore 
         <Box flexDirection="column">
           <Text bold>Settings</Text>
           <Box marginTop={1}>
-            <Menu<'networks' | 'solana' | 'spark' | 'wallet'>
+            <Menu<'networks' | 'solana' | 'wallet'>
               items={[
                 { value: 'networks', label: 'EVM networks', hint: 'active chain & RPC nodes' },
                 { value: 'solana', label: 'Solana RPC', hint: getSolanaRpcUrl() },
-                { value: 'spark', label: 'Spark network', hint: getSparkNetwork() },
                 { value: 'wallet', label: 'Wallet', hint: 'logout · restore · reset' },
               ]}
               onSelect={(v) => {
@@ -207,34 +202,6 @@ export function SettingsScreen({ onBack, onChange, onLogout, onReset, onRestore 
                 disposeManagers();
                 onChange();
                 setStatus('Solana RPC updated.');
-                setStep('home');
-              }}
-            />
-          </Box>
-        </Box>
-      </Screen>
-    );
-  }
-
-  if (step === 'spark') {
-    const current = getSparkNetwork();
-    return (
-      <Screen hints={[{ keys: '↑/↓', label: 'move' }, { keys: 'enter', label: 'select' }, { keys: 'esc', label: 'back' }]}>
-        <Box flexDirection="column">
-          <Text bold>Settings · Spark network</Text>
-          <Text dimColor>Reconnects the Spark wallet on the chosen network.</Text>
-          <Box marginTop={1}>
-            <Menu<SparkNetwork>
-              items={SPARK_NETWORKS.map((n) => ({
-                value: n,
-                label: n.padEnd(8),
-                hint: n === current ? '● current' : '',
-              }))}
-              onSelect={(n) => {
-                setSparkNetwork(n);
-                disposeManagers();
-                onChange();
-                setStatus(`Spark network set to ${n}.`);
                 setStep('home');
               }}
             />
