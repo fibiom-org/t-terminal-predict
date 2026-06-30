@@ -4,3 +4,6 @@ dist
 *.log
 
 .idea
+
+DS_STORE
+test

@@ -130,5 +130,6 @@ export class WdkSendExecutor implements SendExecutor {
 }
 
 export function getSendExecutor(): SendExecutor {
-  return process.env.TT_LIVE_SENDS === '1' ? new WdkSendExecutor() : new MockSendExecutor();
+  // Real execution by default; set TT_LIVE_SENDS=0 to fall back to simulation.
+  return process.env.TT_LIVE_SENDS === '0' ? new MockSendExecutor() : new WdkSendExecutor();
 }

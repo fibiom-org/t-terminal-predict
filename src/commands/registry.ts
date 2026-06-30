@@ -2,6 +2,7 @@ export type CommandName =
   | 'balance'
   | 'send'
   | 'receive'
+  | 'bridge'
   | 'settings'
   | 'logout'
   | 'help'
@@ -18,6 +19,7 @@ export const COMMANDS: readonly CommandSpec[] = [
   { name: 'balance', aliases: ['b', 'bal'], summary: 'Show balances across all networks' },
   { name: 'send', aliases: ['s', 'transfer'], summary: 'Send a token (EVM / Solana)' },
   { name: 'receive', aliases: ['r', 'deposit'], summary: 'Show deposit addresses' },
+  { name: 'bridge', aliases: ['br', 'swap'], summary: 'Bridge tokens across chains (Relay)' },
   { name: 'help', aliases: ['h', '?'], summary: 'Show available commands' },
   { name: 'clear', aliases: ['cls'], summary: 'Clear the output log' },
   { name: 'settings', aliases: ['cfg', 'config'], summary: 'Switch network / configure RPC node' },

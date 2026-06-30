@@ -1,17 +1,18 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { Box, Text, useApp } from 'ink';
-import { SendScreen } from '@/cli/screens/SendScreen.js';
-import { SettingsScreen } from '@/cli/screens/SettingsScreen.js';
-import { ReceiveScreen } from '@/cli/screens/ReceiveScreen.js';
-import { Screen } from '@/components/Screen.js';
-import { Panel } from '@/components/Panel.js';
-import { Loading } from '@/components/Loading.js';
-import { CommandInput } from '@/components/CommandInput.js';
-import { getPortfolio } from '@/wallet/portfolio.js';
-import { parseCommand, commandLabel, COMMANDS } from '@/commands/registry.js';
-import { getChain } from '@/config/chains.js';
-import { shortAddress } from '@/utils/format.js';
-import type { ChainBalances, WalletSession } from '@/types/index.js';
+import React, { useCallback, useEffect, useState } from "react";
+import { Box, Text, useApp } from "ink";
+import { SendScreen } from "@/cli/screens/SendScreen.js";
+import { BridgeScreen } from "@/cli/screens/BridgeScreen.js";
+import { SettingsScreen } from "@/cli/screens/SettingsScreen.js";
+import { ReceiveScreen } from "@/cli/screens/ReceiveScreen.js";
+import { Screen } from "@/components/Screen.js";
+import { Panel } from "@/components/Panel.js";
+import { Loading } from "@/components/Loading.js";
+import { CommandInput } from "@/components/CommandInput.js";
+import { getPortfolio } from "@/wallet/portfolio.js";
+import { parseCommand, commandLabel, COMMANDS } from "@/commands/registry.js";
+import { getChain } from "@/config/chains.js";
+import { shortAddress } from "@/utils/format.js";
+import type { ChainBalances, WalletSession } from "@/types/index.js";
 
 interface Props {
   session: WalletSession;
@@ -24,14 +25,21 @@ interface Props {
   onRestore: () => void;
 }
 
-type View = 'home' | 'send' | 'settings' | 'receive';
+type View = "home" | "send" | "bridge" | "settings" | "receive";
 
-export function MainScreen({ session, activeChainId, onSettingsChanged, onLogout, onReset, onRestore }: Props): React.ReactElement {
+export function MainScreen({
+  session,
+  activeChainId,
+  onSettingsChanged,
+  onLogout,
+  onReset,
+  onRestore,
+}: Props): React.ReactElement {
   const { exit } = useApp();
-  const [view, setView] = useState<View>('home');
+  const [view, setView] = useState<View>("home");
   const [balances, setBalances] = useState<ChainBalances[] | null>(null);
   const [loadingBalances, setLoadingBalances] = useState(false);
-  const [log, setLog] = useState<string[]>(['Type / to see commands, or /help.']);
+  const [log, setLog] = useState<string[]>(["Type / to see commands, or /help."]);
 
   const pushLog = useCallback((line: string) => {
     setLog((prev) => [...prev.slice(-8), line]);
@@ -58,55 +66,62 @@ export function MainScreen({ session, activeChainId, onSettingsChanged, onLogout
       return;
     }
     switch (cmd) {
-      case 'balance':
-        pushLog('Refreshing balances…');
+      case "balance":
+        pushLog("Refreshing balances…");
         void refreshBalances();
         break;
-      case 'send':
-        setView('send');
+      case "send":
+        setView("send");
         break;
-      case 'receive':
-        setView('receive');
+      case "receive":
+        setView("receive");
         break;
-      case 'logout':
-        pushLog('Locking wallet…');
+      case "bridge":
+        setView("bridge");
+        break;
+      case "logout":
+        pushLog("Locking wallet…");
         onLogout();
         break;
-      case 'settings':
-        setView('settings');
+      case "settings":
+        setView("settings");
         break;
-      case 'help':
-        pushLog('Commands:');
+      case "help":
+        pushLog("Commands:");
         for (const c of COMMANDS) pushLog(`  ${commandLabel(c.name).padEnd(10)} ${c.summary}`);
         break;
-      case 'clear':
+      case "clear":
         setLog([]);
         break;
-      case 'exit':
+      case "exit":
         exit();
         break;
     }
   };
 
-  if (view === 'send') {
+  if (view === "send") {
     return (
       <SendScreen
         session={session}
         initialChainId={activeChainId}
-        onBack={() => setView('home')}
+        onBack={() => setView("home")}
         onSent={() => void refreshBalances()}
       />
     );
   }
 
-  if (view === 'receive') {
-    return <ReceiveScreen session={session} onBack={() => setView('home')} />;
+  if (view === "bridge") {
+    return <BridgeScreen session={session} onBack={() => setView("home")} onBridged={() => void refreshBalances()} />;
   }
 
-  if (view === 'settings') {
+  if (view === "receive") {
+    return <ReceiveScreen session={session} onBack={() => setView("home")} />;
+  }
+
+  if (view === "settings") {
     return (
       <SettingsScreen
-        onBack={() => setView('home')}
+        onBack={() => setView("home")}
         onChange={() => {
           onSettingsChanged();
           void refreshBalances();
@@ -118,8 +133,6 @@ export function MainScreen({ session, activeChainId, onSettingsChanged, onLogout
     );
   }
 
-  // Flatten the portfolio into a clean holdings list: only assets with a non-zero
-  // balance, each tagged with its network. Empty chains/tokens are hidden.
   const heldAssets = (balances ?? [])
     .filter((cb) => !cb.error)
     .flatMap((cb) => {
@@ -132,10 +145,10 @@ export function MainScreen({ session, activeChainId, onSettingsChanged, onLogout
   return (
     <Screen
       hints={[
-        { keys: '/', label: 'commands' },
-        { keys: '↑/↓', label: 'pick' },
-        { keys: 'tab', label: 'complete' },
-        { keys: 'enter', label: 'run' },
+        { keys: "/", label: "commands" },
+        { keys: "↑/↓", label: "pick" },
+        { keys: "tab", label: "complete" },
+        { keys: "enter", label: "run" },
       ]}
     >
       <Box flexDirection="column" flexGrow={1}>
@@ -166,7 +179,7 @@ export function MainScreen({ session, activeChainId, onSettingsChanged, onLogout
                 ))}
                 {unavailableCount > 0 && (
                   <Text dimColor>
-                    {unavailableCount} network{unavailableCount > 1 ? 's' : ''} unavailable
+                    {unavailableCount} network{unavailableCount > 1 ? "s" : ""} unavailable
                   </Text>
                 )}
               </>
