@@ -3,6 +3,7 @@ export type CommandName =
   | 'send'
   | 'receive'
   | 'bridge'
+  | 'predict'
   | 'settings'
   | 'logout'
   | 'help'
@@ -20,6 +21,7 @@ export const COMMANDS: readonly CommandSpec[] = [
   { name: 'send', aliases: ['s', 'transfer'], summary: 'Send a token (EVM / Solana)' },
   { name: 'receive', aliases: ['r', 'deposit'], summary: 'Show deposit addresses' },
   { name: 'bridge', aliases: ['br', 'swap'], summary: 'Bridge tokens across chains (Relay)' },
+  { name: 'predict', aliases: ['p', 'poly', 'polymarket', 'bet'], summary: 'Bet on sports events (Polymarket)' },
   { name: 'help', aliases: ['h', '?'], summary: 'Show available commands' },
   { name: 'clear', aliases: ['cls'], summary: 'Clear the output log' },
   { name: 'settings', aliases: ['cfg', 'config'], summary: 'Switch network / configure RPC node' },

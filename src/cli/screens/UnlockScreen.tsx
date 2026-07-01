@@ -57,7 +57,13 @@ export function UnlockScreen({ onDone, onRestore, onReset }: Props): React.React
 
   if (mode === 'menu') {
     return (
-      <Screen hints={[{ keys: '↑/↓', label: 'move' }, { keys: 'enter', label: 'select' }, { keys: 'esc', label: 'back' }]}>
+      <Screen
+        hints={[
+          { keys: '↑/↓', label: 'move' },
+          { keys: 'enter', label: 'select' },
+          { keys: 'esc', label: 'back' },
+        ]}
+      >
         <Box flexDirection="column" flexGrow={1} justifyContent="center" alignItems="center">
           <Box flexDirection="column">
             <Text bold>Wallet options</Text>
@@ -83,15 +89,20 @@ export function UnlockScreen({ onDone, onRestore, onReset }: Props): React.React
 
   if (mode === 'confirmReset') {
     return (
-      <Screen hints={[{ keys: 'enter', label: 'confirm' }, { keys: 'esc', label: 'cancel' }]}>
+      <Screen
+        hints={[
+          { keys: 'enter', label: 'confirm' },
+          { keys: 'esc', label: 'cancel' },
+        ]}
+      >
         <Box flexDirection="column" flexGrow={1} justifyContent="center" alignItems="center">
           <Box flexDirection="column" borderStyle="round" borderColor="red" paddingX={1}>
             <Text color="red" bold>
               Erase this wallet?
             </Text>
             <Text dimColor>
-              This deletes the encrypted wallet and all settings on this device. Funds are only
-              recoverable with your seed phrase. Type RESET to confirm.
+              This deletes the encrypted wallet and all settings on this device. Funds are only recoverable with your
+              seed phrase. Type RESET to confirm.
             </Text>
             <Box marginTop={1}>
               <Field
@@ -115,17 +126,18 @@ export function UnlockScreen({ onDone, onRestore, onReset }: Props): React.React
   }
 
   return (
-    <Screen hints={[{ keys: 'enter', label: 'unlock' }, { keys: 'tab', label: 'options' }]}>
+    <Screen
+      hints={[
+        { keys: 'enter', label: 'unlock' },
+        { keys: 'tab', label: 'options' },
+      ]}
+    >
       <Box flexDirection="column" flexGrow={1} justifyContent="center" alignItems="center">
         <Box flexDirection="column">
           <Text bold>Unlock wallet</Text>
           {address && <Text dimColor>Wallet {shortAddress(address)} · enter your password to continue.</Text>}
           <Box marginTop={1}>
-            {busy ? (
-              <Loading label="Unlocking…" />
-            ) : (
-              <Field label="Password:" mask onSubmit={(v) => void handle(v)} />
-            )}
+            {busy ? <Loading label="Unlocking…" /> : <Field label="Password:" mask onSubmit={(v) => void handle(v)} />}
           </Box>
           {!busy && <Text dimColor>Forgot your password? Press Tab for restore / reset options.</Text>}
           {error && (

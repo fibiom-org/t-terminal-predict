@@ -8,6 +8,7 @@ import { SOLANA, SOLANA_TOKENS } from '@/config/nonEvm.js';
 import { getPublicClient } from '@/wallet/client.js';
 import { getEvmManager, getSolanaManager } from '@/wallet/managers.js';
 import { trimDecimals } from '@/utils/format.js';
+import { isLiveExecution } from '@/storage/settingsStore.js';
 import type { ChainKind, WalletSession } from '@/types/index.js';
 
 const ZERO_EVM = '0x0000000000000000000000000000000000000000';
@@ -19,7 +20,6 @@ const SOLANA_NATIVE_CURRENCY = '11111111111111111111111111111111';
 const RELAY_API_BASE = 'https://api.relay.link';
 const STATUS_TIMEOUT_MS = 90_000;
 const STATUS_POLL_MS = 2_000;
-
 
 const BRIDGEABLE_EVM_SYMBOLS = ['USDC', 'USDT'] as const;
 
@@ -45,6 +45,13 @@ function evmBridgeChain(chainId: number): BridgeChain {
   const tokens: BridgeToken[] = [];
 
   if (chainId === POLYGON_CHAIN_ID) {
+    tokens.push({
+      symbol: native.symbol,
+      name: native.name,
+      decimals: native.decimals,
+      relayCurrency: ZERO_EVM,
+      native: true,
+    });
     tokens.push({
       symbol: POLYGON_USDC_E.symbol,
       name: POLYGON_USDC_E.name,
@@ -226,7 +233,6 @@ function parseQuote(quote: RelayQuote, req: ValidatedBridge, simulated: boolean)
   };
 }
 
-
 function accountRole(isSigner: boolean, isWritable: boolean): AccountRole {
   if (isSigner && isWritable) return AccountRole.WRITABLE_SIGNER;
   if (isSigner) return AccountRole.READONLY_SIGNER;
@@ -373,6 +379,6 @@ export class RelayBridgeExecutor implements BridgeExecutor {
 }
 
 export function getBridgeExecutor(): BridgeExecutor {
-  // Real execution by default; set TT_LIVE_BRIDGES=0 to fall back to simulation.
-  return process.env.TT_LIVE_BRIDGES === '0' ? new MockBridgeExecutor() : new RelayBridgeExecutor();
+  // Real execution by default; toggle to simulation in /settings (or TT_LIVE_BRIDGES=0).
+  return isLiveExecution('bridges') ? new RelayBridgeExecutor() : new MockBridgeExecutor();
 }

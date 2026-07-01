@@ -54,10 +54,10 @@ export function App(): React.ReactElement {
     <HeaderContext.Provider value={headerRight}>
       {route === 'welcome' && <WelcomeScreen onSelect={onWelcome} />}
       {route === 'create' && <CreateWalletScreen onDone={enterMain} onCancel={() => setRoute('welcome')} />}
-      {route === 'import' && <ImportWalletScreen onDone={enterMain} onCancel={() => setRoute(walletExists() ? 'unlock' : 'welcome')} />}
-      {route === 'unlock' && (
-        <UnlockScreen onDone={enterMain} onRestore={() => setRoute('import')} onReset={onReset} />
+      {route === 'import' && (
+        <ImportWalletScreen onDone={enterMain} onCancel={() => setRoute(walletExists() ? 'unlock' : 'welcome')} />
       )}
+      {route === 'unlock' && <UnlockScreen onDone={enterMain} onRestore={() => setRoute('import')} onReset={onReset} />}
       {route === 'main' && session && (
         <MainScreen
           session={session}

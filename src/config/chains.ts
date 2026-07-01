@@ -29,7 +29,6 @@ const BASE_TOKENS: readonly TokenInfo[] = [
   { symbol: 'cbBTC', name: 'Coinbase Wrapped BTC', address: '0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf', decimals: 8 },
 ];
 
-
 const POLYGON_TOKENS: readonly TokenInfo[] = [
   {
     symbol: 'USDC.e',
@@ -86,7 +85,6 @@ export const CHAINS: readonly ChainConfig[] = [
 ];
 
 export const POLYGON_CHAIN_ID = 137;
-
 
 export const POLYGON_USDC_E: TokenInfo = POLYGON_TOKENS[0]!;
 

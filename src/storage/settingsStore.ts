@@ -5,13 +5,16 @@ import { CHAINS, DEFAULT_CHAIN_ID, getChain, isSupportedChain } from '@/config/c
 import { DEFAULT_SOLANA_RPC_URL } from '@/config/nonEvm.js';
 import { ENV_RPC_OVERRIDE } from '@/config/index.js';
 
+export type LiveFeature = 'bets' | 'sends' | 'bridges';
+
+const LIVE_FEATURES: readonly LiveFeature[] = ['bets', 'sends', 'bridges'];
+
 interface Settings {
   readonly version: 1;
   activeChainId: number;
-
   rpcOverrides: Record<number, string>;
-
   solanaRpcUrl?: string;
+  execution: Partial<Record<LiveFeature, boolean>>;
 }
 
 const DIR = join(homedir(), '.tterminal');
@@ -35,7 +38,18 @@ function defaults(): Settings {
   const rpcOverrides: Record<number, string> = {};
 
   if (ENV_RPC_OVERRIDE) rpcOverrides[ENV_RPC_OVERRIDE.chainId] = ENV_RPC_OVERRIDE.url;
-  return { version: 1, activeChainId: DEFAULT_CHAIN_ID, rpcOverrides };
+  return { version: 1, activeChainId: DEFAULT_CHAIN_ID, rpcOverrides, execution: {} };
+}
+
+function sanitizeExecution(raw: unknown): Partial<Record<LiveFeature, boolean>> {
+  const out: Partial<Record<LiveFeature, boolean>> = {};
+  if (raw && typeof raw === 'object') {
+    for (const feature of LIVE_FEATURES) {
+      const value = (raw as Record<string, unknown>)[feature];
+      if (typeof value === 'boolean') out[feature] = value;
+    }
+  }
+  return out;
 }
 
 export function loadSettings(): Settings {
@@ -55,6 +69,7 @@ export function loadSettings(): Settings {
       activeChainId,
       rpcOverrides: { ...raw.rpcOverrides },
       solanaRpcUrl: typeof raw.solanaRpcUrl === 'string' ? raw.solanaRpcUrl : undefined,
+      execution: sanitizeExecution(raw.execution),
     };
   } catch {
     cache = defaults();
@@ -123,6 +138,36 @@ export function setSolanaRpcUrl(url: string): string {
 export function hasSolanaRpcOverride(): boolean {
   const url = loadSettings().solanaRpcUrl;
   return Boolean(url && url.trim());
+}
+
+function envDefaultLive(feature: LiveFeature): boolean {
+  switch (feature) {
+    case 'bets':
+      return process.env.TT_LIVE_BETS === '1';
+    case 'sends':
+      return process.env.TT_LIVE_SENDS !== '0';
+    case 'bridges':
+      return process.env.TT_LIVE_BRIDGES !== '0';
+  }
+}
+
+export function isLiveExecution(feature: LiveFeature): boolean {
+  const override = loadSettings().execution[feature];
+  return typeof override === 'boolean' ? override : envDefaultLive(feature);
+}
+
+export function hasExecutionOverride(feature: LiveFeature): boolean {
+  return typeof loadSettings().execution[feature] === 'boolean';
+}
+
+export function setLiveExecution(feature: LiveFeature, live: boolean): void {
+  loadSettings().execution[feature] = live;
+  persist();
+}
+
+export function clearLiveExecution(feature: LiveFeature): void {
+  delete loadSettings().execution[feature];
+  persist();
 }
 
 export function clearSettingsCache(): void {

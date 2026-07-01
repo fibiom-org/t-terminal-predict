@@ -4,6 +4,7 @@ import { Menu } from '@/components/Menu.js';
 import { Field } from '@/components/Field.js';
 import { Loading } from '@/components/Loading.js';
 import { Screen } from '@/components/Screen.js';
+import { ErrorBox } from '@/components/ErrorBox.js';
 import { CHAINS, getChain } from '@/config/chains.js';
 import { SOLANA } from '@/config/nonEvm.js';
 import {
@@ -140,7 +141,12 @@ export function SendScreen({ session, initialChainId, onBack, onSent }: Props): 
   const assetChoices = asset ? null : kind === 'evm' ? assetsForKind('evm', chainId) : assetsForKind(kind, chainId);
 
   return (
-    <Screen hints={[{ keys: 'enter', label: 'select' }, { keys: 'esc', label: 'back' }]}>
+    <Screen
+      hints={[
+        { keys: 'enter', label: 'select' },
+        { keys: 'esc', label: 'back' },
+      ]}
+    >
       <Box flexDirection="column">
         <Text bold>Send</Text>
 
@@ -277,8 +283,14 @@ export function SendScreen({ session, initialChainId, onBack, onSent }: Props): 
 
           {step === 'result' && result && (
             <Box flexDirection="column">
-              <Text color={result.ok ? 'green' : 'red'}>{result.ok ? '✓ Done' : '✗ Failed'}</Text>
-              <Text>{result.message}</Text>
+              {result.ok ? (
+                <>
+                  <Text color="green">✓ Done</Text>
+                  <Text>{result.message}</Text>
+                </>
+              ) : (
+                <ErrorBox error={result.message} showRaw marginTop={0} />
+              )}
               {result.hash && <Text dimColor>tx: {result.hash}</Text>}
               <Box marginTop={1}>
                 <Text color="cyan">Press Enter to return.</Text>
@@ -286,11 +298,7 @@ export function SendScreen({ session, initialChainId, onBack, onSent }: Props): 
             </Box>
           )}
 
-          {error && (
-            <Box marginTop={1}>
-              <Text color="red">{error}</Text>
-            </Box>
-          )}
+          {error && <ErrorBox error={error} />}
         </Box>
       </Box>
     </Screen>

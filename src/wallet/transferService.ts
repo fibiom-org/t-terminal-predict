@@ -2,6 +2,7 @@ import { isAddress, parseUnits } from 'viem';
 import { getChain, nativeToken } from '@/config/chains.js';
 import { SOLANA, SOLANA_TOKENS } from '@/config/nonEvm.js';
 import { getEvmManager, getSolanaManager } from '@/wallet/managers.js';
+import { isLiveExecution } from '@/storage/settingsStore.js';
 import type { ChainKind, SendResult, TokenInfo, WalletSession } from '@/types/index.js';
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
@@ -101,7 +102,6 @@ export class MockSendExecutor implements SendExecutor {
   }
 }
 
-
 export class WdkSendExecutor implements SendExecutor {
   readonly simulated = false;
 
@@ -130,6 +130,5 @@ export class WdkSendExecutor implements SendExecutor {
 }
 
 export function getSendExecutor(): SendExecutor {
-  // Real execution by default; set TT_LIVE_SENDS=0 to fall back to simulation.
-  return process.env.TT_LIVE_SENDS === '0' ? new MockSendExecutor() : new WdkSendExecutor();
+  return isLiveExecution('sends') ? new WdkSendExecutor() : new MockSendExecutor();
 }

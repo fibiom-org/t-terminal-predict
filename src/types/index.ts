@@ -75,6 +75,17 @@ export interface WalletSession {
   readonly addresses: WalletAddresses;
 }
 
+export interface BuilderCredentials {
+  readonly key: string;
+  readonly secret: string;
+  readonly passphrase: string;
+}
+
+export interface StoredCredentials {
+  readonly version: 1;
+  readonly crypto: EncryptedSecret;
+}
+
 export interface SendResult {
   readonly ok: boolean;
   readonly hash?: string;

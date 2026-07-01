@@ -43,9 +43,6 @@ async function getSolanaBalances(session: WalletSession): Promise<ChainBalances>
 }
 
 export async function getPortfolio(session: WalletSession): Promise<ChainBalances[]> {
-  const [evm, solana] = await Promise.all([
-    getAllChainBalances(session.addresses.evm),
-    getSolanaBalances(session),
-  ]);
+  const [evm, solana] = await Promise.all([getAllChainBalances(session.addresses.evm), getSolanaBalances(session)]);
   return [...evm, solana];
 }

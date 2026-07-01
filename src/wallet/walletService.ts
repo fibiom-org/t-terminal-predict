@@ -10,7 +10,10 @@ interface Disposable {
   dispose?: () => void;
 }
 
-async function withManager<T>(manager: Disposable & { getAccount(index?: number): Promise<{ getAddress(): Promise<string> }> }, fn: (m: typeof manager) => Promise<T>): Promise<T> {
+async function withManager<T>(
+  manager: Disposable & { getAccount(index?: number): Promise<{ getAddress(): Promise<string> }> },
+  fn: (m: typeof manager) => Promise<T>,
+): Promise<T> {
   try {
     return await fn(manager);
   } finally {
@@ -22,7 +25,9 @@ async function withManager<T>(manager: Disposable & { getAccount(index?: number)
   }
 }
 
-async function addressOf(manager: { getAccount(index?: number): Promise<{ getAddress(): Promise<string> }> }): Promise<string> {
+async function addressOf(manager: {
+  getAccount(index?: number): Promise<{ getAddress(): Promise<string> }>;
+}): Promise<string> {
   const account = await manager.getAccount(0);
   const address = await account.getAddress();
   (account as Disposable).dispose?.();

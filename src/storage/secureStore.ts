@@ -43,7 +43,6 @@ export function loadWallet(): StoredWallet | null {
   return JSON.parse(raw) as StoredWallet;
 }
 
-
 export function resetAll(): void {
   rmSync(DIR, { recursive: true, force: true });
   clearSettingsCache();

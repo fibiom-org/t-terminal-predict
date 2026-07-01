@@ -23,6 +23,10 @@
     "lint:fix": "oxlint --fix"
   },
   "dependencies": {
+    "@polymarket/builder-relayer-client": "^0.0.10",
+    "@polymarket/builder-signing-sdk": "^1.0.0",
+    "@polymarket/client": "^0.1.0-beta.10",
+    "@polymarket/clob-client-v2": "^1.0.6",
     "@relayprotocol/relay-sdk": "^6.0.1",
     "@solana/addresses": "^3.0.3",
     "@solana/functional": "^3.0.3",
